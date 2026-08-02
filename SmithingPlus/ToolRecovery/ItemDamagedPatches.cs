@@ -53,20 +53,16 @@ public class ItemDamagedPatches
     }
 
     [HarmonyPrefix]
-    [HarmonyPatch(nameof(CollectibleObject.DamageItem))]
-    private static void Prefix_DamageItem(
+    [HarmonyPatch(nameof(CollectibleObject.DestroyItem))]
+    private static void Prefix_DestroyItem(
         IWorldAccessor world,
         Entity byEntity,
-        ItemSlot itemSlot,
-        int amount = 1,
-        bool destroyOnZeroDurability = true)
+        ItemSlot itemSlot)
     {
         if (world.Api.Side.IsClient())
             return;
-        if (!destroyOnZeroDurability)
-            return;
         var durability = itemSlot?.Itemstack?.GetRemainingDurability();
-        if (!durability.HasValue || durability > amount) return;
+        if (durability is null or > 0) return; // Was this item (likely) destroyed due to its durability reaching zero?
         if (itemSlot.Itemstack?.Collectible.HasBehavior<CollectibleBehaviorRepairableTool>() != true) return;
         Core.Logger.VerboseDebug("Broken tool in InventoryID: {0}, Entity: {1}", itemSlot.Inventory?.InventoryID,
             byEntity.GetName());
